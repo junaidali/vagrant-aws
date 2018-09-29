@@ -68,7 +68,7 @@ Vagrant.configure("2") do |config|
     yum check-update
     yum upgrade -y
     yum install -y epel-release
-    yum install -y python-pip
+    yum install -y python-pip jq htop
     pip install --upgrade pip
     pip install awscli --upgrade --user
   SHELL
