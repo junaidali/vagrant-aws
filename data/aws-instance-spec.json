@@ -1,0 +1,9 @@
+{
+    "ImageId": "ami-00bb49e7341011857",
+    "SecurityGroupIds": [ "sg-00fb74b57f308ae63" ],
+    "InstanceType": "t2.medium",
+    "KeyName": "junaid_alm",
+    "Placement": {
+        "AvailabilityZone": "us-east-1a"
+    }
+}

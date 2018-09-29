@@ -1,0 +1,25 @@
+---
+  - hosts: localhost
+    become: yes
+    connection: local
+
+    tasks:
+      - name: install basic packages
+        apt: name={{item}} state=present
+        with_items:
+          - htop
+          - tmux
+      
+      - name: set ssh to use custom port
+        lineinfile:
+          path: /etc/ssh/sshd_config
+          regexp: '^Port='
+          line: 'Port=8680'
+        notify:
+          - restart sshd
+  
+    handlers:
+      - name: restart sshd
+        service:
+          name: sshd
+          state: restarted
