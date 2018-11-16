@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description" : "Creates the ALM AWS Infrastructure. It includes VPC, Subnets, RDS Database, EC2 Instances running in an ASG for Websites, ELB for website front end",
+  "Parameters" : {
+
+  },
+  "Resources" : {
+    "KeyName": {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access into the servers",
+      "Type": "String"
+    },
+    
+
+  },
+  "Mappings" : {
+
+  },
+  "Outputs" : {
+
+  }
+}
