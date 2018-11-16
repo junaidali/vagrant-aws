@@ -1,8 +1,9 @@
 {
-    "ImageId": "ami-00bb49e7341011857",
-    "SecurityGroupIds": [ "sg-00fb74b57f308ae63" ],
-    "InstanceType": "t2.medium",
+    "ImageId": "ami-050202fb72f001b47",
+    "SecurityGroupIds": [ "sg-3721884c" ],
+    "InstanceType": "t2.small",
     "KeyName": "junaid_alm",
+    "SubnetId": "subnet-dae7c8ac",
     "Placement": {
         "AvailabilityZone": "us-east-1a"
     }
