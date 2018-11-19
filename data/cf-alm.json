@@ -5,6 +5,16 @@
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access into the servers",
       "Type": "String"
+    },
+    "AZ1": {
+      "Description": "The Primary AvailabilityZone",
+      "Type": "String",
+      "Default": "us-east-1a"
+    },
+    "AZ2": {
+      "Description": "The Secondary AvailabilityZone",
+      "Type": "String",
+      "Default": "us-east-1b"
     }
   },
   "Resources": {
@@ -14,14 +24,33 @@
         "CidrBlock": "10.0.0.0/16",
         "EnableDnsSupport": true,
         "EnableDnsHostnames": true,
-        "InstanceTenancy": "default",
-        "Tags": [
-          {
-            "Name": "ALM-VPC"
-          }
-        ]
+        "InstanceTenancy": "default"
+      }
+    },
+  "PrivateSubnetAZ1": {
+    "Type": "AWS::EC2::Subnet",
+    "Properties": {
+      "AvailabilityZone": {
+        "Ref": "AZ1"
+      },
+      "CidrBlock": "10.0.1.0/24",
+      "VpcId": {
+        "Ref": "ALMVPC"
       }
     }
+  },
+  "PublicSubnetAZ1": {
+    "Type": "AWS::EC2::Subnet",
+    "Properties": {
+      "AvailabilityZone": {
+        "Ref": "AZ1"
+      },
+      "CidrBlock": "10.0.2.0/24",
+      "VpcId": {
+        "Ref": "ALMVPC"
+      }
+    }
+  }
   },
   "Mappings": {},
   "Outputs": {}
