@@ -6,6 +6,11 @@
       "Description": "Name of an existing EC2 KeyPair to enable SSH access into the servers",
       "Type": "String"
     },
+    "ADRootPassword": {
+      "Description": "The SimpleAD Administrator account password",
+      "Type": "String",
+      "Default": "P@ssw0rd"
+    },
     "AZ1": {
       "Description": "The Primary AvailabilityZone",
       "Type": "String",
@@ -15,6 +20,11 @@
       "Description": "The Secondary AvailabilityZone",
       "Type": "String",
       "Default": "us-east-1b"
+    },
+    "PacsClientInstanceType": {
+      "Description": "The instance type for the PACS client image",
+      "Type": "String",
+      "Default": "t2.nano"
     }
   },
   "Resources": {
@@ -27,31 +37,116 @@
         "InstanceTenancy": "default"
       }
     },
-  "PrivateSubnetAZ1": {
-    "Type": "AWS::EC2::Subnet",
-    "Properties": {
-      "AvailabilityZone": {
-        "Ref": "AZ1"
-      },
-      "CidrBlock": "10.0.1.0/24",
-      "VpcId": {
-        "Ref": "ALMVPC"
+    "PrivateSubnetAZ1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AZ1"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "VpcId": {
+          "Ref": "ALMVPC"
+        }
+      }
+    },
+    "PublicSubnetAZ1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AZ1"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "VpcId": {
+          "Ref": "ALMVPC"
+        }
+      }
+    },
+    "PrivateSubnetAZ2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AZ2"
+        },
+        "CidrBlock": "10.0.3.0/24",
+        "VpcId": {
+          "Ref": "ALMVPC"
+        }
+      }
+    },
+    "PublicSubnetAZ2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AZ2"
+        },
+        "CidrBlock": "10.0.4.0/24",
+        "VpcId": {
+          "Ref": "ALMVPC"
+        }
+      }
+    },
+    "InternetGateway": {
+      "Type" : "AWS::EC2::InternetGateway",
+      "Properties" : {
+        "Tags": [ { "Key": "name", "Value": "default-internet-gateway" }]
+      }
+    },
+    "InternetGatewayAttachment": {
+      "Type" : "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": { "Ref": "InternetGateway" },
+        "VpcId": { "Ref": "ALMVPC" }
+      }
+    },
+    "DirectoryServer": {
+      "Type": "AWS::DirectoryService::SimpleAD",
+      "Properties": {
+        "Name": "alm.local",
+        "Password": {
+          "Ref": "ADRootPassword"
+        },
+        "Size": "Small",
+        "VpcSettings": {
+          "SubnetIds": [
+            {
+              "Ref": "PrivateSubnetAZ1"
+            },
+            {
+              "Ref": "PrivateSubnetAZ2"
+            }
+          ],
+          "VpcId": {
+            "Ref": "ALMVPC"
+          }
+        }
+      }
+    },
+    "PACSCLIENT01": {
+      "Type" : "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Ref": "AZ1" },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegion2AMI", { "Ref": "AZ1" }, "win2k16"
+          ]
+        },
+        "InstanceType": "t2.nano",
+        "KeyName": { "Ref": "KeyName" },
+        "SubnetId": { "Ref": "PublicSubnetAZ1" }
+      }
+    },
+    "PACSCLIENT01EIP": {
+      "Type" : "AWS::EC2::EIP",
+      "Properties": {
+        "InstanceId": { "Ref": "PACSCLIENT01" }
       }
     }
   },
-  "PublicSubnetAZ1": {
-    "Type": "AWS::EC2::Subnet",
-    "Properties": {
-      "AvailabilityZone": {
-        "Ref": "AZ1"
-      },
-      "CidrBlock": "10.0.2.0/24",
-      "VpcId": {
-        "Ref": "ALMVPC"
-      }
+  "Mappings": {
+    "AWSRegion2AMI": {
+      "us-east-1a": { "win2k16": "ami-050202fb72f001b47" },
+      "us-east-1b": { "win2k16": " ami-028779930ada5200c" }
     }
-  }
   },
-  "Mappings": {},
   "Outputs": {}
 }
