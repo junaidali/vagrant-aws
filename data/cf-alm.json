@@ -2,9 +2,19 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Creates the ALM AWS Infrastructure. It includes VPC, Subnets, RDS Database, EC2 Instances running in an ASG for Websites, ELB for website front end",
   "Parameters": {
+    "Environment": {
+      "Description": "The type of environment provisioned (prod, dev, test, uat)",
+      "Type": "String",
+      "Default": "dev"
+    },
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access into the servers",
       "Type": "String"
+    },
+    "ADDNSName": {
+      "Description": "The SimpleAD DNS name",
+      "Type": "String",
+      "Default": "alm.local"
     },
     "ADRootPassword": {
       "Description": "The SimpleAD Administrator account password",
@@ -31,10 +41,30 @@
     "ALMVPC": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
-        "CidrBlock": "10.0.0.0/16",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            { "Ref": "Environment" },
+            "vpcsubnet"
+          ]
+        },
         "EnableDnsSupport": true,
         "EnableDnsHostnames": true,
-        "InstanceTenancy": "default"
+        "InstanceTenancy": "default",
+        "Tags":  [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "ALMVPC",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PrivateSubnetAZ1": {
@@ -43,10 +73,30 @@
         "AvailabilityZone": {
           "Ref": "AZ1"
         },
-        "CidrBlock": "10.0.1.0/24",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            { "Ref": "Environment" },
+            "privatesubnetaz1"
+          ]
+        },
         "VpcId": {
           "Ref": "ALMVPC"
-        }
+        },
+        "Tags":[
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "private-subnet-az1",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PublicSubnetAZ1": {
@@ -58,7 +108,8 @@
         "CidrBlock": "10.0.2.0/24",
         "VpcId": {
           "Ref": "ALMVPC"
-        }
+        },
+        "Tags": [ { "Key": "Name", "Value": "public-subnet-az1" }]
       }
     },
     "PrivateSubnetAZ2": {
@@ -70,7 +121,8 @@
         "CidrBlock": "10.0.3.0/24",
         "VpcId": {
           "Ref": "ALMVPC"
-        }
+        },
+        "Tags": [ { "Key": "Name", "Value": "private-subnet-az2" }]
       }
     },
     "PublicSubnetAZ2": {
@@ -82,13 +134,14 @@
         "CidrBlock": "10.0.4.0/24",
         "VpcId": {
           "Ref": "ALMVPC"
-        }
+        },
+        "Tags": [ { "Key": "Name", "Value": "public-subnet-az2" }]
       }
     },
     "InternetGateway": {
       "Type" : "AWS::EC2::InternetGateway",
       "Properties" : {
-        "Tags": [ { "Key": "name", "Value": "default-internet-gateway" }]
+        "Tags": [ { "Key": "Name", "Value": "default-internet-gateway" }]
       }
     },
     "InternetGatewayAttachment": {
@@ -98,52 +151,89 @@
         "VpcId": { "Ref": "ALMVPC" }
       }
     },
-    "DirectoryServer": {
-      "Type": "AWS::DirectoryService::SimpleAD",
+    "PublicRouteTableAZ1": {
+      "Type" : "AWS::EC2::RouteTable",
       "Properties": {
-        "Name": "alm.local",
-        "Password": {
-          "Ref": "ADRootPassword"
-        },
-        "Size": "Small",
-        "VpcSettings": {
-          "SubnetIds": [
-            {
-              "Ref": "PrivateSubnetAZ1"
-            },
-            {
-              "Ref": "PrivateSubnetAZ2"
-            }
-          ],
-          "VpcId": {
-            "Ref": "ALMVPC"
-          }
-        }
+        "VpcId": { "Ref": "ALMVPC" },
+        "Tags": [ { "Key": "Name", "Value": "public-route-table-az1" }]
       }
     },
-    "PACSCLIENT01": {
-      "Type" : "AWS::EC2::Instance",
+    "PublicRouteTableAZ2": {
+      "Type" : "AWS::EC2::RouteTable",
       "Properties": {
-        "AvailabilityZone": { "Ref": "AZ1" },
-        "ImageId": {
-          "Fn::FindInMap": [
-            "AWSRegion2AMI", { "Ref": "AZ1" }, "win2k16"
-          ]
-        },
-        "InstanceType": "t2.nano",
-        "KeyName": { "Ref": "KeyName" },
+        "VpcId": { "Ref": "ALMVPC" },
+        "Tags": [ { "Key": "Name", "Value": "public-route-table-az2" }]
+      }
+    },
+    "PrivateRouteTableAZ1": {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "ALMVPC" },
+        "Tags": [ { "Key": "Name", "Value": "private-route-table-az1" }]
+      }
+    },
+    "PrivateRouteTableAZ2": {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "ALMVPC" },
+        "Tags": [ { "Key": "Name", "Value": "private-route-table-az2" }]
+      }
+    },
+    "InternetRouteAZ1": {
+      "Type" : "AWS::EC2::Route",
+      "DependsOn": "InternetGateway",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTableAZ1" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+    "InternetRouteAZ2": {
+      "Type" : "AWS::EC2::Route",
+      "DependsOn": "InternetGateway",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTableAZ2" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+    "SubnetRouteTableAssociationPublicAZ1": {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTableAZ1" },
         "SubnetId": { "Ref": "PublicSubnetAZ1" }
       }
     },
-    "PACSCLIENT01EIP": {
-      "Type" : "AWS::EC2::EIP",
+    "SubnetRouteTableAssociationPublicAZ2": {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
       "Properties": {
-        "InstanceId": { "Ref": "PACSCLIENT01" }
+        "RouteTableId": { "Ref": "PublicRouteTableAZ2" },
+        "SubnetId": { "Ref": "PublicSubnetAZ2" }
+      }
+    },
+    "SubnetRouteTableAssociationPrivateAZ1": {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "PrivateRouteTableAZ1" },
+        "SubnetId": { "Ref": "PrivateSubnetAZ1" }
+      }
+    },
+    "SubnetRouteTableAssociationPrivateAZ2": {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "PrivateRouteTableAZ2" },
+        "SubnetId": { "Ref": "PrivateSubnetAZ2" }
       }
     }
   },
   "Mappings": {
-    "AWSRegion2AMI": {
+    "EnvironmentMap": {
+      "dev": { "vpcsubnet": "10.0.0.0/16", "publicsubnetaz1": "10.0.1.0/24", "privatesubnetaz1": "10.0.2.0/24", "publicsubnetaz2": "10.0.3.0/24", "privatesubnetaz2": "10.0.4.0/24" },
+      "test": { "vpcsubnet": "10.1.0.0/16", "publicsubnetaz1": "10.1.1.0/24", "privatesubnetaz1": "10.1.2.0/24", "publicsubnetaz2": "10.1.3.0/24", "privatesubnetaz2": "10.1.4.0/24" },
+      "uat": { "vpcsubnet": "10.2.0.0/16", "publicsubnetaz1": "10.2.1.0/24", "privatesubnetaz1": "10.2.2.0/24", "publicsubnetaz2": "10.2.3.0/24", "privatesubnetaz2": "10.2.4.0/24" },
+      "prod": { "vpcsubnet": "10.3.0.0/16", "publicsubnetaz1": "10.3.1.0/24", "privatesubnetaz1": "10.3.2.0/24", "publicsubnetaz2": "10.3.3.0/24", "privatesubnetaz2": "10.3.4.0/24" }
+    },
+    "AWSRegion2Map": {
       "us-east-1a": { "win2k16": "ami-050202fb72f001b47" },
       "us-east-1b": { "win2k16": " ami-028779930ada5200c" }
     }
