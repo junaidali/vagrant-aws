@@ -83,7 +83,7 @@
         "VpcId": {
           "Ref": "ALMVPC"
         },
-        "Tags":[
+        "Tags": [
           {
             "Key": "Name",
             "Value": {
@@ -105,11 +105,30 @@
         "AvailabilityZone": {
           "Ref": "AZ1"
         },
-        "CidrBlock": "10.0.2.0/24",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            { "Ref": "Environment" },
+            "publicsubnetaz1"
+          ]
+        },
         "VpcId": {
           "Ref": "ALMVPC"
         },
-        "Tags": [ { "Key": "Name", "Value": "public-subnet-az1" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "public-subnet-az1",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PrivateSubnetAZ2": {
@@ -118,11 +137,30 @@
         "AvailabilityZone": {
           "Ref": "AZ2"
         },
-        "CidrBlock": "10.0.3.0/24",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            { "Ref": "Environment" },
+            "privatesubnetaz2"
+          ]
+        },
         "VpcId": {
           "Ref": "ALMVPC"
         },
-        "Tags": [ { "Key": "Name", "Value": "private-subnet-az2" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "private-subnet-az2",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PublicSubnetAZ2": {
@@ -131,17 +169,49 @@
         "AvailabilityZone": {
           "Ref": "AZ2"
         },
-        "CidrBlock": "10.0.4.0/24",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            { "Ref": "Environment" },
+            "publicsubnetaz2"
+          ]
+        },
         "VpcId": {
           "Ref": "ALMVPC"
         },
-        "Tags": [ { "Key": "Name", "Value": "public-subnet-az2" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "public-subnet-az2",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "InternetGateway": {
       "Type" : "AWS::EC2::InternetGateway",
       "Properties" : {
-        "Tags": [ { "Key": "Name", "Value": "default-internet-gateway" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "default-internet-gateway",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "InternetGatewayAttachment": {
@@ -155,28 +225,80 @@
       "Type" : "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": { "Ref": "ALMVPC" },
-        "Tags": [ { "Key": "Name", "Value": "public-route-table-az1" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "public-route-trable-az1",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PublicRouteTableAZ2": {
       "Type" : "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": { "Ref": "ALMVPC" },
-        "Tags": [ { "Key": "Name", "Value": "public-route-table-az2" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "public-route-table-az2",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PrivateRouteTableAZ1": {
       "Type" : "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": { "Ref": "ALMVPC" },
-        "Tags": [ { "Key": "Name", "Value": "private-route-table-az1" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "private-route-table-az1",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "PrivateRouteTableAZ2": {
       "Type" : "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": { "Ref": "ALMVPC" },
-        "Tags": [ { "Key": "Name", "Value": "private-route-table-az2" }]
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "private-route-table-az2",
+                  { "Ref": "Environment"}
+                ]
+              ]
+            }
+          }
+        ]
       }
     },
     "InternetRouteAZ1": {
